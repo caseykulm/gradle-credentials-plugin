@@ -1,8 +1,10 @@
 package nu.studer.gradle.credentials;
 
 import nu.studer.gradle.credentials.domain.CredentialsEncryptor;
-import nu.studer.gradle.credentials.domain.CredentialsPersistenceManager;
-import nu.studer.java.util.OrderedProperties;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.FileBasedConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.internal.tasks.options.Option;
 import org.gradle.api.tasks.Input;
@@ -23,7 +25,8 @@ public class AddCredentialsTask extends DefaultTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddCredentialsTask.class);
 
     private CredentialsEncryptor credentialsEncryptor;
-    private CredentialsPersistenceManager credentialsPersistenceManager;
+//    private CredentialsPersistenceManager credentialsPersistenceManager;
+    private FileBasedConfigurationBuilder<FileBasedConfiguration> builder;
     private String key;
     private String value;
 
@@ -31,8 +34,12 @@ public class AddCredentialsTask extends DefaultTask {
         this.credentialsEncryptor = credentialsEncryptor;
     }
 
-    public void setCredentialsPersistenceManager(CredentialsPersistenceManager credentialsPersistenceManager) {
-        this.credentialsPersistenceManager = credentialsPersistenceManager;
+//    public void setCredentialsPersistenceManager(CredentialsPersistenceManager credentialsPersistenceManager) {
+//        this.credentialsPersistenceManager = credentialsPersistenceManager;
+//    }
+
+    public void setConfigBuilder(FileBasedConfigurationBuilder<FileBasedConfiguration> builder) {
+        this.builder = builder;
     }
 
     @Option(option = "key", description = "The credentials key.")
@@ -55,13 +62,17 @@ public class AddCredentialsTask extends DefaultTask {
         return value != null ? value : getProjectProperty(CredentialsPlugin.CREDENTIALS_VALUE_PROPERTY);
     }
 
+//    @OutputFile
+//    public File getEncryptedPropertiesFile() {
+//        return credentialsPersistenceManager.getCredentialsFile();
+//    }
     @OutputFile
     public File getEncryptedPropertiesFile() {
-        return credentialsPersistenceManager.getCredentialsFile();
+        return builder.getFileHandler().getFile();
     }
 
     @TaskAction
-    void addCredentials() throws IOException {
+    void addCredentials() throws IOException, ConfigurationException {
         // get credentials key and value from the project properties
         String key = getCredentialsKey();
         String value = getCredentialsValue();
@@ -71,14 +82,20 @@ public class AddCredentialsTask extends DefaultTask {
         LOGGER.debug(String.format("Add credentials with key: '%s', value: '%s'", key, new String(placeholderValue)));
 
         // read the current persisted credentials
-        OrderedProperties credentials = credentialsPersistenceManager.readCredentials();
+//        OrderedProperties credentials = credentialsPersistenceManager.readCredentials();
 
         // encrypt value and update credentials
         String encryptedValue = credentialsEncryptor.encrypt(value);
-        credentials.setProperty(key, encryptedValue);
+//        credentials.setProperty(key, encryptedValue);
 
         // persist the updated credentials
-        credentialsPersistenceManager.storeCredentials(credentials);
+//        credentialsPersistenceManager.storeCredentials(credentials);
+
+        ///////////////////////////////////////////////////////////////////////////
+
+        Configuration config = builder.getConfiguration();
+        config.setProperty(key, encryptedValue);
+        builder.save();
     }
 
     private String getProjectProperty(String key) {

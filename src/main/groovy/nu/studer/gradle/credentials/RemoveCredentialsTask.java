@@ -1,7 +1,9 @@
 package nu.studer.gradle.credentials;
 
-import nu.studer.gradle.credentials.domain.CredentialsPersistenceManager;
-import nu.studer.java.util.OrderedProperties;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.FileBasedConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.internal.tasks.options.Option;
 import org.gradle.api.tasks.Input;
@@ -20,11 +22,16 @@ public class RemoveCredentialsTask extends DefaultTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveCredentialsTask.class);
 
-    private CredentialsPersistenceManager credentialsPersistenceManager;
+//    private CredentialsPersistenceManager credentialsPersistenceManager;
+    private FileBasedConfigurationBuilder<FileBasedConfiguration> builder;
     private String key;
 
-    public void setCredentialsPersistenceManager(CredentialsPersistenceManager credentialsPersistenceManager) {
-        this.credentialsPersistenceManager = credentialsPersistenceManager;
+//    public void setCredentialsPersistenceManager(CredentialsPersistenceManager credentialsPersistenceManager) {
+//        this.credentialsPersistenceManager = credentialsPersistenceManager;
+//    }
+
+    public void setConfigBuilder(FileBasedConfigurationBuilder<FileBasedConfiguration> builder) {
+        this.builder = builder;
     }
 
     @Option(option = "key", description = "The credentials key.")
@@ -37,26 +44,35 @@ public class RemoveCredentialsTask extends DefaultTask {
         return key != null ? key : getProjectProperty(CredentialsPlugin.CREDENTIALS_KEY_PROPERTY);
     }
 
+//    @OutputFile
+//    public File getEncryptedPropertiesFile() {
+//        return credentialsPersistenceManager.getCredentialsFile();
+//    }
+
     @OutputFile
     public File getEncryptedPropertiesFile() {
-        return credentialsPersistenceManager.getCredentialsFile();
+        return builder.getFileHandler().getFile();
     }
 
     @TaskAction
-    void removeCredentials() throws IOException {
+    void removeCredentials() throws IOException, ConfigurationException {
         // get credentials key from the project properties
         String key = getCredentialsKey();
 
         LOGGER.debug(String.format("Remove credentials with key: '%s'", key));
 
         // read the current persisted credentials
-        OrderedProperties credentials = credentialsPersistenceManager.readCredentials();
+//        OrderedProperties credentials = credentialsPersistenceManager.readCredentials();
 
         // remove the credentials with the given key
-        credentials.removeProperty(key);
+//        credentials.removeProperty(key);
 
         // persist the updated credentials
-        credentialsPersistenceManager.storeCredentials(credentials);
+//        credentialsPersistenceManager.storeCredentials(credentials);
+
+        Configuration config = builder.getConfiguration();
+        config.clearProperty(key);
+        builder.save();
     }
 
     private String getProjectProperty(String key) {

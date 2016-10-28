@@ -13,10 +13,11 @@ apply plugin: 'nu.studer.plugindev'
 apply plugin: 'nu.studer.credentials'
 
 group = 'nu.studer'
-version = '1.0.2.DEV'
+version = '1.1.0.DEV'
 
 dependencies {
-  compile "nu.studer:java-ordered-properties:$orderedPropertiesVersion"
+//  compile "nu.studer:java-ordered-properties:$orderedPropertiesVersion"
+  compile 'org.apache.commons:commons-configuration2:2.1'
   testCompile "junit:junit:$junitVersion"
 }
 
